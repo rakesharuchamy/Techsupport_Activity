@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/AuthContext';
 import AppLayout from './components/AppLayout';
 import LoginPage from './pages/LoginPage';
@@ -21,7 +21,7 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -31,7 +31,7 @@ export default function App() {
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   );
 }
