@@ -77,3 +77,15 @@ export async function getAllWorkLogs(startDate, endDate, activityTypeId = null) 
 export async function deleteWorkLog(id) {
   await deleteDoc(doc(db, 'workLogs', id));
 }
+
+// ── User Management ─────────────────────────────────────────
+export async function getAllAppUsers() {
+  const snap = await getDocs(collection(db, 'users'));
+  return snap.docs.map(d => ({ docId: d.id, ...d.data() }));
+}
+export async function saveUserToFirestore(uid, username, email) {
+  await addDoc(collection(db, 'users'), { uid, username, email });
+}
+export async function deleteUserFromFirestore(docId) {
+  await deleteDoc(doc(db, 'users', docId));
+}

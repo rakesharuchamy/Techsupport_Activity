@@ -1,38 +1,36 @@
 import { useState, useEffect } from 'react';
 import {
   getActivityTypes, createActivityType, updateActivityType, deleteActivityType,
-  getEnvironments, createEnvironment, updateEnvironment, deleteEnvironment
+  getEnvironments, createEnvironment, updateEnvironment, deleteEnvironment,
+  getAllAppUsers, saveUserToFirestore, deleteUserFromFirestore
 } from '../lib/db';
-import { Plus, Pencil, Trash2, Activity, Server, Loader2 } from 'lucide-react';
+import { useAuth } from '../lib/AuthContext';
+import { apiKey } from '../lib/firebase';
+import { Plus, Pencil, Trash2, Activity, Server, Users, Eye, EyeOff, Shield } from 'lucide-react';
 
+// ── Reusable EditableRow ────────────────────────────────────
 function EditableRow({ name, onSave, onDelete, isSaving, isDeleting }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(name);
-
   function handleSave() {
     if (!value.trim()) return;
     onSave(value.trim());
     setEditing(false);
   }
-
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 8, transition: 'background 0.1s' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 8 }}>
       {editing ? (
         <>
           <input className="input" value={value} onChange={e => setValue(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSave()} autoFocus style={{ flex: 1, height: 32 }} />
-          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? <div className="spinner" style={{ width: 12, height: 12 }} /> : 'Save'}
-          </button>
+          <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={isSaving}>Save</button>
           <button className="btn btn-ghost btn-sm" onClick={() => { setValue(name); setEditing(false); }}>Cancel</button>
         </>
       ) : (
         <>
           <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{name}</span>
-          <button className="btn btn-icon btn-ghost btn-sm" onClick={() => setEditing(true)} title="Edit">
-            <Pencil size={13} />
-          </button>
-          <button className="btn btn-icon btn-danger btn-sm" onClick={onDelete} disabled={isDeleting} title="Delete">
+          <button className="btn btn-icon btn-ghost btn-sm" onClick={() => setEditing(true)}><Pencil size={13} /></button>
+          <button className="btn btn-icon btn-danger btn-sm" onClick={onDelete} disabled={isDeleting}>
             {isDeleting ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Trash2 size={13} />}
           </button>
         </>
@@ -59,7 +57,156 @@ function AddRow({ placeholder, onAdd, isAdding }) {
   );
 }
 
+// ── User Management Panel ───────────────────────────────────
+function UserManagement({ showToast }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+
+  async function loadUsers() {
+    setLoading(true);
+    const list = await getAllAppUsers();
+    setUsers(list);
+    setLoading(false);
+  }
+
+  useEffect(() => { loadUsers(); }, []);
+
+  async function handleAddUser() {
+    if (!newUsername.trim()) return showToast('Please enter a username', 'error');
+    if (newPassword.length < 6) return showToast('Password must be at least 6 characters', 'error');
+
+    setAdding(true);
+    try {
+      // Check if username already exists
+      const existing = users.find(u => u.username === newUsername.trim().toLowerCase());
+      if (existing) {
+        showToast('Username already exists!', 'error');
+        setAdding(false);
+        return;
+      }
+
+      // Create user via Firebase Auth REST API
+      const email = `${newUsername.trim().toLowerCase()}@myteam.app`;
+      const res = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: newPassword, returnSecureToken: true })
+        }
+      );
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+
+      // Save to Firestore
+      await saveUserToFirestore(data.localId, newUsername.trim().toLowerCase(), email);
+      showToast(`User "${newUsername}" created successfully! ✅`);
+      setNewUsername('');
+      setNewPassword('');
+      loadUsers();
+    } catch (err) {
+      showToast(err.message || 'Failed to create user', 'error');
+    }
+    setAdding(false);
+  }
+
+  async function handleDeleteUser(user) {
+    if (!confirm(`Delete user "${user.username}"? They will no longer be able to login.`)) return;
+    setDeletingId(user.docId);
+    try {
+      await deleteUserFromFirestore(user.docId);
+      showToast(`User "${user.username}" deleted`);
+      loadUsers();
+    } catch {
+      showToast('Failed to delete user', 'error');
+    }
+    setDeletingId(null);
+  }
+
+  return (
+    <div className="card" style={{ marginTop: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+        <Users size={15} style={{ color: 'var(--accent)' }} />
+        <span style={{ fontWeight: 700, fontSize: 14 }}>Manage Team Members</span>
+        <span className="badge badge-neutral" style={{ marginLeft: 'auto' }}>{users.length} users</span>
+      </div>
+
+      {/* Add new user form */}
+      <div style={{ background: 'var(--surface2)', borderRadius: 10, padding: 16, marginBottom: 20, border: '1px solid var(--border)' }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+          Add New User
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, alignItems: 'flex-end' }}>
+          <div>
+            <label className="label">Username</label>
+            <input className="input" placeholder="e.g. john"
+              value={newUsername} onChange={e => setNewUsername(e.target.value)}
+              autoCapitalize="none" spellCheck={false} />
+          </div>
+          <div>
+            <label className="label">Password</label>
+            <div style={{ position: 'relative' }}>
+              <input className="input" type={showPassword ? 'text' : 'password'}
+                placeholder="Min 6 characters" value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                style={{ paddingRight: 36 }} />
+              <button type="button" onClick={() => setShowPassword(v => !v)}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', padding: 4 }}>
+                {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={handleAddUser} disabled={adding}
+            style={{ height: 38 }}>
+            {adding ? <div className="spinner" /> : <><Plus size={14} /> Add User</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Users list */}
+      {loading ? (
+        <div style={{ height: 60, borderRadius: 8, background: 'var(--surface2)' }} />
+      ) : users.length === 0 ? (
+        <p style={{ color: 'var(--text3)', fontSize: 13, textAlign: 'center', padding: '16px 0' }}>No users yet</p>
+      ) : (
+        <div>
+          {users.map(user => (
+            <div key={user.docId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 8 }}>
+              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', fontWeight: 700, flexShrink: 0 }}>
+                {user.username?.[0]?.toUpperCase()}
+              </div>
+              <div style={{ flex: 1 }}>
+                <p style={{ fontSize: 13, fontWeight: 600 }}>{user.username}</p>
+                {user.username === 'admin' && (
+                  <span style={{ fontSize: 11, color: 'var(--accent2)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Shield size={10} /> Admin
+                  </span>
+                )}
+              </div>
+              {user.username !== 'admin' && (
+                <button className="btn btn-icon btn-danger btn-sm" onClick={() => handleDeleteUser(user)}
+                  disabled={deletingId === user.docId}>
+                  {deletingId === user.docId ? <div className="spinner" style={{ width: 12, height: 12 }} /> : <Trash2 size={13} />}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main Settings Page ──────────────────────────────────────
 export default function SettingsPage() {
+  const { username } = useAuth();
+  const isAdmin = username === 'admin';
+
   const [activityTypes, setActivityTypes] = useState([]);
   const [environments, setEnvironments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +246,6 @@ export default function SettingsPage() {
     catch { showToast('Failed to delete', 'error'); }
     setDeletingActivity(null);
   }
-
   async function handleCreateEnv(name) {
     setSavingEnv(true);
     try { const item = await createEnvironment(name); setEnvironments(p => [...p, item]); showToast('Environment created'); }
@@ -132,7 +278,7 @@ export default function SettingsPage() {
 
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 26, fontWeight: 800 }}>Settings</h1>
-        <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 6 }}>Manage activity types and environments</p>
+        <p style={{ color: 'var(--text2)', fontSize: 13, marginTop: 6 }}>Manage activity types, environments and team members</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
@@ -186,6 +332,16 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* User Management — Admin only */}
+      {isAdmin && <UserManagement showToast={showToast} />}
+
+      {!isAdmin && (
+        <div style={{ marginTop: 24, padding: 16, borderRadius: 10, background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Shield size={16} style={{ color: 'var(--warning)', flexShrink: 0 }} />
+          <p style={{ fontSize: 13, color: 'var(--warning)' }}>Only the admin can manage team members.</p>
+        </div>
+      )}
     </div>
   );
 }
