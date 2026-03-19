@@ -89,3 +89,33 @@ export async function saveUserToFirestore(uid, username, email) {
 export async function deleteUserFromFirestore(docId) {
   await deleteDoc(doc(db, 'users', docId));
 }
+
+// ── Requests ─────────────────────────────────────────────────
+export async function submitRequest(userId, username, type, name) {
+  await addDoc(collection(db, 'requests'), {
+    userId, username, type, name,
+    status: 'pending',
+    createdAt: serverTimestamp()
+  });
+}
+
+export async function getAllRequests() {
+  const q = query(collection(db, 'requests'), orderBy('createdAt', 'desc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+export async function approveRequest(requestId, type, name) {
+  // Add to actual collection
+  if (type === 'activity') {
+    await addDoc(collection(db, 'activityTypes'), { name });
+  } else {
+    await addDoc(collection(db, 'environments'), { name });
+  }
+  // Mark as approved
+  await updateDoc(doc(db, 'requests', requestId), { status: 'approved' });
+}
+
+export async function rejectRequest(requestId) {
+  await updateDoc(doc(db, 'requests', requestId), { status: 'rejected' });
+}
