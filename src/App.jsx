@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import TeamLogsPage from './pages/TeamLogsPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
+import LogsPage from './pages/LogsPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -29,6 +30,7 @@ export default function App() {
             <Route path="team-logs" element={<TeamLogsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="logs" element={<LogsPage />} />
           </Route>
         </Routes>
       </HashRouter>
