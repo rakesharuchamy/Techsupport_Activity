@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   getActivityTypes, createActivityType, updateActivityType, deleteActivityType,
   getEnvironments, createEnvironment, updateEnvironment, deleteEnvironment,
-  getAllAppUsers, saveUserToFirestore, deleteUserFromFirestore,
+  getAllAppUsers, saveUserToFirestore, deleteUserFromFirestore, updateUserTheme,
   submitRequest, getAllRequests, approveRequest, rejectRequest
 } from '../lib/db';
 import { useAuth } from '../lib/AuthContext';
@@ -337,6 +337,21 @@ function UserManagement({ showToast }) {
                   <Shield size={10} /> Admin
                 </span>
               )}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <label style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap' }}>Theme:</label>
+              <select className="input" value={user.theme || 'dark'}
+                onChange={async e => {
+                  await updateUserTheme(user.docId, e.target.value);
+                  showToast(`Theme updated for ${user.username}`);
+                  loadUsers();
+                }}
+                style={{ width: 100, padding: '4px 8px', fontSize: 12 }}>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="blue">Blue</option>
+                <option value="green">Green</option>
+              </select>
             </div>
             {user.username !== 'admin' && (
               <button className="btn btn-icon btn-danger btn-sm" onClick={() => handleDeleteUser(user)} disabled={deletingId === user.docId}>

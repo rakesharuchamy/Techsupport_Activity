@@ -1,6 +1,6 @@
 import {
   collection, addDoc, getDocs, deleteDoc, doc,
-  updateDoc, query, where, orderBy, serverTimestamp
+  updateDoc, query, where, orderBy, serverTimestamp, limit
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -37,10 +37,10 @@ export async function deleteEnvironment(id) {
 }
 
 // ── Work Logs ───────────────────────────────────────────────
-export async function createWorkLog({ userId, userEmail, activityTypeId, environmentIds, notes, date }) {
+export async function createWorkLog({ userId, userEmail, activityTypeId, environmentIds, notes, timeSpent, date }) {
   const ref = await addDoc(collection(db, 'workLogs'), {
     userId, userEmail, activityTypeId, environmentIds, notes: notes || '',
-    date, timestamp: serverTimestamp()
+    timeSpent: timeSpent || '', date, timestamp: serverTimestamp()
   });
   return { id: ref.id };
 }
@@ -98,24 +98,39 @@ export async function submitRequest(userId, username, type, name) {
     createdAt: serverTimestamp()
   });
 }
-
 export async function getAllRequests() {
   const q = query(collection(db, 'requests'), orderBy('createdAt', 'desc'));
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
-
 export async function approveRequest(requestId, type, name) {
-  // Add to actual collection
   if (type === 'activity') {
     await addDoc(collection(db, 'activityTypes'), { name });
   } else {
     await addDoc(collection(db, 'environments'), { name });
   }
-  // Mark as approved
   await updateDoc(doc(db, 'requests', requestId), { status: 'approved' });
 }
-
 export async function rejectRequest(requestId) {
   await updateDoc(doc(db, 'requests', requestId), { status: 'rejected' });
+}
+
+// ── App Logs ─────────────────────────────────────────────────
+export async function getAppLogs(limitCount = 200) {
+  const q = query(
+    collection(db, 'appLogs'),
+    orderBy('timestamp', 'desc'),
+    limit(limitCount)
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+// ── Theme Management ─────────────────────────────────────────
+export async function updateUserTheme(docId, theme) {
+  await updateDoc(doc(db, 'users', docId), { theme });
+}
+export async function getUserDocId(uid) {
+  const snap = await getDocs(query(collection(db, 'users'), where('uid', '==', uid)));
+  return snap.docs[0]?.id || null;
 }

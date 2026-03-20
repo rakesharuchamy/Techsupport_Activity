@@ -1,6 +1,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-:root {
+/* ── Dark theme (default) ── */
+:root, [data-theme="dark"] {
   --bg: #0f0f11;
   --surface: #18181c;
   --surface2: #222228;
@@ -19,6 +20,60 @@
   --shadow: 0 4px 24px rgba(0,0,0,0.4);
 }
 
+/* ── Light theme ── */
+[data-theme="light"] {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface2: #f0f0f3;
+  --border: #e0e0e8;
+  --accent: #6c5ce7;
+  --accent2: #8b79f5;
+  --accent-glow: rgba(108,92,231,0.12);
+  --text: #1a1a2e;
+  --text2: #555566;
+  --text3: #9999aa;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+/* ── Blue theme ── */
+[data-theme="blue"] {
+  --bg: #0a0f1e;
+  --surface: #0d1526;
+  --surface2: #111d36;
+  --border: #1e2d4a;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --accent-glow: rgba(59,130,246,0.18);
+  --text: #e8f0fe;
+  --text2: #8ba3c7;
+  --text3: #4a6080;
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
+/* ── Green theme ── */
+[data-theme="green"] {
+  --bg: #0a1410;
+  --surface: #0d1c14;
+  --surface2: #11261a;
+  --border: #1a3824;
+  --accent: #10b981;
+  --accent2: #34d399;
+  --accent-glow: rgba(16,185,129,0.18);
+  --text: #e8faf2;
+  --text2: #6db88a;
+  --text3: #3a6650;
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+
 html, body, #root {
   height: 100%;
   font-family: 'DM Sans', sans-serif;
@@ -34,12 +89,10 @@ h1, h2, h3, .heading {
   letter-spacing: -0.02em;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
-/* Utility */
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: var(--radius-sm);
@@ -105,7 +158,6 @@ h1, h2, h3, .heading {
   animation: spin 0.7s linear infinite; flex-shrink: 0;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .fade-in { animation: fadeIn 0.2s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
