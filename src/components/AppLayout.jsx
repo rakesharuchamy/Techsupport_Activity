@@ -68,7 +68,7 @@ export default function AppLayout() {
 
         {/* Branding */}
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-          <p style={{ fontSize: 11, color: 'var(--text3)' }}>© {new Date().getFullYear()} Rakesh Aruchamy</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>© {new Date().getFullYear()} Rakesh Aruchamy</p>
         </div>
       </aside>
 

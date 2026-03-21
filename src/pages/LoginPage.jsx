@@ -122,7 +122,7 @@ export default function LoginPage() {
         </div>
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
-          <p style={{ fontSize: 12, color: 'var(--text3)' }}>© {new Date().getFullYear()} Rakesh Aruchamy</p>
+          <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>© {new Date().getFullYear()} Rakesh Aruchamy</p>
         </div>
       </div>
     </div>
