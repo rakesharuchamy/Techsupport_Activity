@@ -65,6 +65,11 @@ export default function AppLayout() {
             <LogOut size={14} /> Sign out
           </button>
         </div>
+
+        {/* Branding */}
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+          <p style={{ fontSize: 11, color: 'var(--text3)' }}>© {new Date().getFullYear()} Rakesh Aruchamy</p>
+        </div>
       </aside>
 
       <main style={{ flex: 1, overflow: 'auto', background: 'var(--bg)' }}>

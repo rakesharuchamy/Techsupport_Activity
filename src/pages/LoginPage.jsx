@@ -116,9 +116,13 @@ export default function LoginPage() {
 
         <div style={{ marginTop: 32, padding: '16px', borderRadius: 10, background: 'var(--surface2)', border: '1px solid var(--border)' }}>
           <p style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.7 }}>
-            🔒 Access is by invitation only.<br />
+            Access is by invitation only.<br />
             Contact your admin to get an account.
           </p>
+        </div>
+
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: 'var(--text3)' }}>© {new Date().getFullYear()} Rakesh Aruchamy</p>
         </div>
       </div>
     </div>
